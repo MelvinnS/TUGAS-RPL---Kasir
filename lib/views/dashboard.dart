@@ -14,10 +14,6 @@ class _DashboardViewState extends State<DashboardView> {
   String? nama;
   String? role;
 
-  final Color primaryBlue = const Color(0xFF4C7DAF);
-  final Color accentBlue = const Color(0xFF3A6EA5);
-  final Color softBlue = const Color(0xFFEAF2FB);
-
   getUserLogin() async {
     var user = await userLogin.getUserLogin();
     if (user.status != false) {
@@ -37,69 +33,53 @@ class _DashboardViewState extends State<DashboardView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: softBlue,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Dashboard"),
-        backgroundColor: primaryBlue,
-        foregroundColor: Colors.white,
+        elevation: 0,
+        backgroundColor: Colors.white,
         centerTitle: true,
+        title: Text(nama ?? "Profile", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.popAndPushNamed(context, '/login');
-            },
-            icon: Icon(Icons.logout),
+            onPressed: () => Navigator.popAndPushNamed(context, '/login'),
+            icon: const Icon(Icons.menu, color: Colors.black),
           ),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Center(
-          child: Card(
-            elevation: 6,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.dashboard,
-                    size: 60,
-                    color: primaryBlue,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    "Selamat Datang",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: primaryBlue,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    nama ?? "-",
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: accentBlue,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    "Role: ${role ?? "-"}",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      body: Column(
+        children: [
+          const SizedBox(height: 20),
+          const CircleAvatar(
+            radius: 45,
+            backgroundColor: Color(0xFFEEEEEE),
+            child: Icon(Icons.person, size: 50, color: Colors.grey),
           ),
-        ),
+          const SizedBox(height: 12),
+          Text(
+            "@${nama?.toLowerCase().replaceAll(' ', '_') ?? 'user'}",
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(role ?? "User", style: const TextStyle(fontSize: 12)),
+          ),
+          const SizedBox(height: 24),
+          const Divider(thickness: 1),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 3,
+              children: List.generate(6, (index) => Container(
+                decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade50)),
+                child: const Icon(Icons.grid_on, color: Colors.grey, size: 20),
+              )),
+            ),
+          )
+        ],
       ),
       bottomNavigationBar: BottomNav(0),
     );
