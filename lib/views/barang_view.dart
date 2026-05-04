@@ -23,8 +23,10 @@ class _BarangViewState extends State<BarangView> {
     getBarang();
   }
 
+  /// ================= GET DATA =================
   getBarang() async {
     ResponseDataList response = await barangService.getBarang();
+
     if (response.status == true) {
       setState(() {
         listBarang = response.data as List<BarangModel>;
@@ -32,153 +34,135 @@ class _BarangViewState extends State<BarangView> {
     }
   }
 
+  /// ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        title: const Text(
-          "Shop",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
+        title: const Text("Katalog Barang"),
+
+        /// 🔙 BACK KE DASHBOARD
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const DashboardView()),
+              MaterialPageRoute(
+                builder: (context) => const DashboardView(),
+              ),
             );
           },
         ),
+
+        /// ➕ TAMBAH BARANG
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded),
+            icon: const Icon(Icons.add),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const TambahBarangView(title: "Add Product"),
+                  builder: (context) => const TambahBarangView(
+                    title: "Tambah Barang",
+                  ),
                 ),
-              ).then((_) => getBarang());
+              ).then((_) => getBarang()); // refresh setelah balik
             },
           ),
         ],
       ),
+
+      /// ================= LIST BARANG =================
       body: listBarang == null
-          ? const Center(child: CircularProgressIndicator(color: Colors.pink))
+          ? const Center(child: CircularProgressIndicator())
           : listBarang!.isEmpty
-              ? const Center(child: Text("No products yet"))
-              : GridView.builder(
-                  padding: const EdgeInsets.all(10),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.68,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
+              ? const Center(child: Text("Belum ada barang"))
+              : ListView.builder(
                   itemCount: listBarang!.length,
                   itemBuilder: (context, index) {
                     final item = listBarang![index];
-                    return GestureDetector(
-                      onLongPress: () => _showMenu(item),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade200),
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      child: ListTile(
+                        leading: Image.network(
+                          item.image ?? "",
+                          width: 60,
+                          fit: BoxFit.cover,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                        title: Text(
+                          item.nama_barang ?? "",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        subtitle: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                                child: Image.network(
-                                  item.image ?? "",
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (c, e, s) => Container(color: Colors.grey[100]),
-                                ),
-                              ),
+                            Text("Rp ${item.harga?.toStringAsFixed(0)}"),
+                            Text("Stok: ${item.stok}"),
+                          ],
+                        ),
+
+                        /// ================= MENU CRUD =================
+                        trailing: PopupMenuButton<String>(
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: "update",
+                              child: Text("Update"),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.nama_barang ?? "",
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Rp ${item.harga?.toStringAsFixed(0)}",
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.redAccent,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Stock: ${item.stok}",
-                                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
+                            const PopupMenuItem(
+                              value: "hapus",
+                              child: Text("Hapus"),
                             ),
                           ],
+
+                          onSelected: (String value) async {
+
+                            /// ===== UPDATE =====
+                            if (value == "update") {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      TambahBarangView(
+                                    title: "Update Barang",
+                                    item: item,
+                                  ),
+                                ),
+                              ).then((_) => getBarang());
+                            }
+
+                            /// ===== HAPUS =====
+                            if (value == "hapus") {
+                              var result = await AlertMessage()
+                                  .showAlertDialog(context);
+
+                              if (result != null &&
+                                  result['status'] == true) {
+                                var res = await barangService
+                                    .hapusBarang(item.id);
+
+                                if (res.status == true) {
+                                  AlertMessage().showAlert(
+                                      context, res.message, true);
+                                  getBarang();
+                                } else {
+                                  AlertMessage().showAlert(
+                                      context, res.message, false);
+                                }
+                              }
+                            }
+                          },
                         ),
                       ),
                     );
                   },
                 ),
-    );
-  }
-
-  void _showMenu(BarangModel item) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text("Update Product"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TambahBarangView(title: "Update", item: item),
-                ),
-              ).then((_) => getBarang());
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text("Delete Product", style: TextStyle(color: Colors.red)),
-            onTap: () async {
-              Navigator.pop(context);
-              var result = await AlertMessage().showAlertDialog(context);
-              if (result != null && result['status'] == true) {
-                var res = await barangService.hapusBarang(item.id);
-                if (res.status == true) {
-                  AlertMessage().showAlert(context, res.message, true);
-                  getBarang();
-                }
-              }
-            },
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
     );
   }
 }
